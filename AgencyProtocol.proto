@@ -1,0 +1,123 @@
+/*******************************************************************************
+
+	Copyright 2020 by International Games System Co., Ltd.
+	All rights reserved.
+
+	This software is the confidential and proprietary information of
+	International Game System Co., Ltd. ('Confidential Information'). You shall
+	not disclose such Confidential Information and shall use it only in
+	accordance with the terms of the license agreement you entered into with
+	International Game System Co., Ltd.
+
+*******************************************************************************/
+
+/**
+ *  @file   AgencyProtocol.proto
+ *  @author saintliao
+ *  @date   Begin   2020/12/03
+ *  @brief  AgencyServer 與 microservice 溝通使用的通訊協定
+ */
+
+syntax = "proto3";
+package agency;
+option optimize_for = SPEED;
+
+////////////////////////////////////////////////////////////////////////////////
+//  Enumerations
+////////////////////////////////////////////////////////////////////////////////
+
+//------------------------------------------------------------------------------
+// AgencyService 對 microservice 方的通訊
+enum AgencyToMicro {
+	A2M_NULL					= 0;	// 空，保留
+	A2M_USER_LOGIN				= 1;	// 玩家登入					UserLoginData
+	A2M_USER_LOGOUT				= 2;	// 玩家登出					UserAccountData
+	A2M_GAME_SERVER_LAUNCH		= 3;	// 遊戲伺服器上線			GameServerData
+	A2M_GAME_SERVER_SHUTDOWN	= 4;	// 遊戲伺服器下線			GameServerNotifyData
+	A2M_USER_JOIN_GAME			= 5;	// 玩家加入遊戲				UserJoinLeaveGameData
+	A2M_USER_LEAVE_GAME			= 6;	// 玩家離開遊戲				UserJoinLeaveGameData
+	A2M_USER_UPDATE_STATUS		= 7;	// 玩家更新狀態				UserStatus
+	A2M_USER_UPDATE_PROFILE		= 8;	// 玩家更新個人資料			UserPofile
+	A2M_GET_MONEY_ACK			= 9;	// 玩家貨幣回應				GetMoneyAckData
+}
+
+//------------------------------------------------------------------------------
+// microservice 對 AgencyService 方的通訊
+enum MicroToAgency {
+	M2A_NULL					= 0;	// 空，保留
+	M2A_GET_MONEY_REQ			= 1;	// 取得玩家貨幣數量			UserAccountData
+}
+
+//	更新金錢狀態
+enum CurrencyChangeStatus {
+	None = 0;
+	Success = 1;		// 成功
+	NoUser = 2;			// 沒有這個玩家
+	OutOfMoney = 3;		// 貨幣數量不足
+	SystemError = 4;	// 系統錯誤
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//	Messages - Data define
+////////////////////////////////////////////////////////////////////////////////
+
+message UserProfile {
+	string loginId = 1;			// 玩家帳號
+	string nickname = 2;		// 玩家暱稱
+	uint32 accountId = 3;		// 玩家編號
+	string countryCode = 4;		// 國別碼
+	int32 language = 5;			// 語系
+//	int64 createTime = 6;		// 帳號建立時間
+//	int64 lastLoginTime = 7;	// 最後登入時間
+}
+
+message UserStatus {
+	uint32 depositTimes = 1;	// 儲值次數
+	double depositAmount = 2;	// 儲值總數
+	int32 vipLevel = 3;			// VIP 等級
+	int32 preVipLevel = 4;		// 先前 VIP 等級
+	int64 monthlyPass = 5;		// 月卡期限
+	double totalAmount = 6;		// 最近儲值總額
+	double lastMonthAmount = 7;	// 上個月上分總金額
+	double curMonthAmount = 8;	// 這個月上分總金額
+}
+
+message UserLoginData {
+	UserProfile profile = 1;
+	UserStatus status = 2;
+}
+
+message UserAccountData {
+	uint32 accountId = 1;		// 玩家編號
+}
+
+message GameServerData {
+	uint32 themeId = 1;			// 廳館編號
+	uint32 gameId = 2;			// 遊戲編號
+	string themeName = 3;		// 廳館名稱
+	string gameName = 4;		// 遊戲名稱
+	string groupName = 5;		// 群組編號
+}
+
+message GameServerNotifyData {
+	uint32 themeId = 1;			// 廳館編號
+}
+
+message UserJoinLeaveGameData {
+	uint32 themeId = 1;			// 廳館編號
+	uint32 accountId = 2;		// 玩家編號
+}
+
+message Money {
+	int64 creditIn = 1;			// 儲值來的錢
+	int64 winIn = 2;			// 贏來的錢
+}
+
+message UserMoney {
+	repeated Money property = 1;
+}
+
+message GetMoneyAckData {
+	CurrencyChangeStatus res = 1;	// 回應狀況
+	UserMoney money = 2;			// 財務資料
+}
