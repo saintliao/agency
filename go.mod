@@ -1,4 +1,4 @@
-module agency
+module github.com/saintliao/agency
 
 go 1.15
 
