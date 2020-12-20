@@ -26,7 +26,6 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-
 	"time"
 )
 
@@ -97,7 +96,7 @@ func (p *poolManager) SendWork(handler interface{}, params ...interface{}) *Task
 	// fire in the hole!
 	work := &Task{
 		which:    -1,
-		state:    TASK_STATE_NEW,
+		state:    TaskStateNew,
 		handler:  hval,
 		name:     hname,
 		elems:    e,
@@ -182,7 +181,7 @@ func (p *poolManager) AddLoopJob(handler interface{}, interval time.Duration, pa
 	}
 	// fire in the hole!
 	job := &Job{
-		state:      JOB_STATE_IDLE,
+		state:      JobStateIdle,
 		handler:    hval,
 		name:       hname,
 		interval:   interval,
@@ -231,7 +230,7 @@ func (p *poolManager) moveWorkToReady(work *Task) {
 }
 
 func (p *poolManager) removeWorkFromBlock(work *Task) {
-	if work.state == TASK_STATE_CANCEL {
+	if work.state == TaskStateCancel {
 		p.blockWorks.Remove(work)
 	}
 }

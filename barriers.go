@@ -217,7 +217,7 @@ func (o *OrderData) expireDelayed(work *Task) {
 		return
 	}
 	o.delays.Remove(work)
-	if work.state == TASK_STATE_CANCEL {
+	if work.state == TaskStateCancel {
 		return
 	}
 	o.addWork(work)

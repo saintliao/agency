@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 //
-//  Copyright 2017 by International Games System Co., Ltd.
+//  Copyright 2020 by International Games System Co., Ltd.
 //  All rights reserved.
 //
 //  This software is the confidential and proprietary information of

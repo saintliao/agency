@@ -31,10 +31,14 @@ import (
 type JobStateEnum int
 
 const (
-	JOB_STATE_IDLE    JobStateEnum = iota // 初始，未開始進行
-	JOB_STATE_RUN                         // 執行中
-	JOB_STATE_SUSPEND                     // 暫停中
-	JOB_STATE_CANCEL                      // 停止
+	// JobStateIdle : 初始狀態
+	JobStateIdle JobStateEnum = iota
+	// JobStateRun : 執行中
+	JobStateRun
+	// JobStateSuspend : 暫停中
+	JobStateSuspend
+	// JobStateCancel : 停止
+	JobStateCancel
 )
 
 //------------------------------------------------------------------------------
@@ -60,7 +64,7 @@ type Job struct {
 // Run : 開始執行工作 (必須呼叫！)
 // @param	delay	延遲多久後開始工作 time.Duration 格式，可不輸入
 func (j *Job) Run(delay ...interface{}) {
-	if j.state != JOB_STATE_IDLE {
+	if j.state != JobStateIdle {
 		Error("Job:Run: invalid state. FUNC=%s, STATE=%d", j.name, j.state)
 		return
 	}
@@ -71,30 +75,30 @@ func (j *Job) Run(delay ...interface{}) {
 			j.delayStart = 0
 		}
 	}
-	j.state = JOB_STATE_RUN
+	j.state = JobStateRun
 	go j.jobProcess()
 }
 
 // Suspend : 暫停執行工作
 func (j *Job) Suspend() {
-	if j.state == JOB_STATE_SUSPEND {
+	if j.state == JobStateSuspend {
 		return
 	}
-	j.state = JOB_STATE_SUSPEND
+	j.state = JobStateSuspend
 }
 
 // Resume : 恢復執行工作
 func (j *Job) Resume() {
-	if j.state != JOB_STATE_SUSPEND {
+	if j.state != JobStateSuspend {
 		return
 	}
-	j.state = JOB_STATE_RUN
+	j.state = JobStateRun
 	j.resumed <- true
 }
 
 // Cancel : 結束工作
 func (j *Job) Cancel() {
-	j.state = JOB_STATE_CANCEL
+	j.state = JobStateCancel
 }
 
 // GetStatus : 取得目前工作狀態
@@ -112,13 +116,13 @@ func (j *Job) jobProcess() {
 	}
 	for {
 		switch j.state {
-		case JOB_STATE_RUN:
+		case JobStateRun:
 			j.handler.Call(j.elems)
 
-		case JOB_STATE_SUSPEND:
+		case JobStateSuspend:
 			<-j.resumed
 
-		case JOB_STATE_CANCEL:
+		case JobStateCancel:
 			j.waitGroup.Done()
 			PoolManager.removeJob(j)
 			Info("Job:process: job end. NAME=%s", j.name)

@@ -35,16 +35,16 @@ import (
 type TaskStateEnum int
 
 const (
-	// TASK_STATE_NEW : 新狀態
-	TASK_STATE_NEW TaskStateEnum = iota
-	// TASK_STATE_BLOCKED : 狀態阻斷中
-	TASK_STATE_BLOCKED
-	// TASK_STATE_READY : 預備中，事務可以被處裡
-	TASK_STATE_READY
-	// TASK_STATE_CANCEL : 取消
-	TASK_STATE_CANCEL
-	// TASK_STATE_INVOKED : 事務處理中
-	TASK_STATE_INVOKED
+	// TaskStateNew : 新狀態
+	TaskStateNew TaskStateEnum = iota
+	// TaskStateBlocked : 狀態阻斷中
+	TaskStateBlocked
+	// TaskStateReady : 預備中，事務可以被處裡
+	TaskStateReady
+	// TaskStateCancel : 取消
+	TaskStateCancel
+	// TaskStateInvoked : 事務處理中
+	TaskStateInvoked
 )
 
 //------------------------------------------------------------------------------
@@ -72,11 +72,11 @@ type (
 
 var (
 	taskEnumStrinMap = map[TaskStateEnum]string{
-		TASK_STATE_NEW:     "TASK_STATE_NEW",
-		TASK_STATE_BLOCKED: "TASK_STATE_BLOCKED",
-		TASK_STATE_READY:   "TASK_STATE_READY",
-		TASK_STATE_CANCEL:  "TASK_STATE_CANCEL",
-		TASK_STATE_INVOKED: "TASK_STATE_INVOKED",
+		TaskStateNew:     "TaskStateNew",
+		TaskStateBlocked: "TaskStateBlocked",
+		TaskStateReady:   "TaskStateReady",
+		TaskStateCancel:  "TaskStateCancel",
+		TaskStateInvoked: "TaskStateInvoked",
 	}
 )
 
@@ -84,18 +84,22 @@ var (
 // Public Methods
 //------------------------------------------------------------------------------
 
+func (t *TaskStateEnum) String() string {
+	return taskEnumStrinMap[*t]
+}
+
 // Cancel : 取消命令，多半都是用在 delayBarrier 上
 func (w *Task) Cancel() {
-	if TASK_STATE_READY < w.state {
+	if TaskStateReady < w.state {
 		return
 	}
 	w.Lock()
 	defer w.Unlock()
 	switch w.state {
-	case TASK_STATE_BLOCKED, TASK_STATE_READY:
+	case TaskStateBlocked, TaskStateReady:
 		old := w.state
-		w.state = TASK_STATE_CANCEL
-		if old == TASK_STATE_BLOCKED {
+		w.state = TaskStateCancel
+		if old == TaskStateBlocked {
 			PoolManager.removeWorkFromBlock(w)
 		}
 		if w.checker != nil {
@@ -109,12 +113,8 @@ func (w *Task) Cancel() {
 //	Private Methods
 //------------------------------------------------------------------------------
 
-func (t *TaskStateEnum) String() string {
-	return taskEnumStrinMap[*t]
-}
-
 func (w *Task) submit() {
-	if w.state != TASK_STATE_NEW {
+	if w.state != TaskStateNew {
 		Error("Task:submit: failed. STAT=%s", strconv.Itoa(int(w.state)))
 		return
 	}
@@ -124,10 +124,10 @@ func (w *Task) submit() {
 	w.Lock()
 	defer w.Unlock()
 	if w.canInvoke() {
-		w.state = TASK_STATE_READY
+		w.state = TaskStateReady
 		PoolManager.addReadyWork(w)
 	} else {
-		w.state = TASK_STATE_BLOCKED
+		w.state = TaskStateBlocked
 		PoolManager.addBlockWork(w)
 	}
 }
@@ -144,7 +144,7 @@ func (w *Task) isCompleted() bool {
 }
 
 func (w *Task) completed() {
-	if w.state != TASK_STATE_INVOKED {
+	if w.state != TaskStateInvoked {
 		Error("Task:completed: wrong state. STATE=%s", w.state.String())
 		return
 	}
@@ -155,17 +155,17 @@ func (w *Task) completed() {
 }
 
 func (w *Task) invoke(which int, info *TaskInfo) {
-	if w.state == TASK_STATE_CANCEL {
+	if w.state == TaskStateCancel {
 		return
 	}
 	w.Lock()
-	if w.state != TASK_STATE_READY {
+	if w.state != TaskStateReady {
 		Error("Task:invoke: wrong state. STATE=%s", w.state.String())
 		w.Unlock()
 		return
 	}
 	w.which = which
-	w.state = TASK_STATE_INVOKED
+	w.state = TaskStateInvoked
 	w.Unlock()
 	info.prepare(w.name)
 	defer PoolManager.catchPanic(w.name)
@@ -175,18 +175,18 @@ func (w *Task) invoke(which int, info *TaskInfo) {
 }
 
 func (w *Task) reinvoke() {
-	if TASK_STATE_BLOCKED < w.state {
+	if TaskStateBlocked < w.state {
 		return
 	}
 	w.Lock()
 	defer w.Unlock()
 	switch w.state {
-	case TASK_STATE_BLOCKED:
+	case TaskStateBlocked:
 		if w.canInvoke() {
-			w.state = TASK_STATE_READY
+			w.state = TaskStateReady
 			PoolManager.moveWorkToReady(w)
 		}
-	case TASK_STATE_READY, TASK_STATE_CANCEL, TASK_STATE_INVOKED:
+	case TaskStateReady, TaskStateCancel, TaskStateInvoked:
 		return
 	}
 }

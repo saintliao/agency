@@ -68,6 +68,7 @@ type (
 //	Public Methods
 //------------------------------------------------------------------------------
 
+// NewConnector : 以 address:port 來建立一個 Connector 物件
 func NewConnector(address string) *Connector {
 	connector := &Connector{
 		conn:    nil,
@@ -158,8 +159,6 @@ func (c *Connector) Send(cmd interface{}, pb proto.Message) error {
 func (c *Connector) OnCommand(cmd *Command) {
 	Info("Connector:OnCommand: CMD=%02d, LEN=%d", cmd.Type(), cmd.Length())
 	c.CommandHandler(cmd)
-	// switch AgencyToMicro(cmd.Type()) {
-	// }
 }
 
 //------------------------------------------------------------------------------
